@@ -3,6 +3,36 @@ require 'test_helper'
 class VariableTest < Minitest::Test
   include Liquid
 
+  # rake base_test TEST=test/integration/variable_test.rb TESTOPTS="--name=test_undefined_variable_with_strict_variables -v"
+  def test_undefined_variable
+    template = Template.parse(%|X{{nonexistent}}X|)
+    assert_equal 'XX', template.render!
+  end
+
+  def test_undefined_variable_with_filter
+    template = Template.parse(%@X{{nonexistent|default: 'x'}}X@)
+    assert_equal 'XxX', template.render!
+  end
+
+  def test_undefined_variable_with_filter_and_strict_variables
+    template = Template.parse(%@X{{nonexistent|default: 'x'}}X@)
+    e = assert_raises(RuntimeError) {
+      template.render!({}, strict_variables: true)
+    }
+  end
+
+  def test_undefined_variable_with_strict_variables
+    template = Template.parse(%|X{{nonexistent}}X|)
+    #template.render!({'xxx' => 'this is xxx', 'nilvalue' => nil}, strict_variables: true)
+
+    e = assert_raises(RuntimeError) {
+      template.render!({}, strict_variables: true)
+    }
+    #assert_equal "Unknown variable 'test'", e.message
+  end
+
+  # ---
+
   def test_simple_variable
     template = Template.parse(%|{{test}}|)
     assert_equal 'worked', template.render!('test' => 'worked')

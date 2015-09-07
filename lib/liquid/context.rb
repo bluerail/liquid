@@ -14,7 +14,7 @@ module Liquid
   #   context['bob']  #=> nil  class Context
   class Context
     attr_reader :scopes, :errors, :registers, :environments, :resource_limits
-    attr_accessor :exception_handler
+    attr_accessor :exception_handler, :strict_variables
 
     def initialize(environments = {}, outer_scope = {}, registers = {}, rethrow_errors = false, resource_limits = nil)
       @environments     = [environments].flatten
@@ -200,6 +200,9 @@ module Liquid
     def lookup_and_evaluate(obj, key)
       if (value = obj[key]).is_a?(Proc) && obj.respond_to?(:[]=)
         obj[key] = (value.arity == 0) ? value.call : value.call(self)
+      elsif @strict_variables && !obj.has_key?(key)
+        # TODO: We probably want to add to errors, or something
+        raise RuntimeError, "The variable `#{key}' is not defined"
       else
         value
       end
